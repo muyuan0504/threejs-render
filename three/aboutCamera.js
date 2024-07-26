@@ -13,6 +13,7 @@ export function useCamera() {
 
     const scene = new THREE.Scene()
 
+    // 创建一个立方球体
     const geometry = new THREE.BoxGeometry(1, 1, 1, 1, 1, 1)
     const material = new THREE.MeshBasicMaterial({ color: 0x000080, wireframe: true })
     const cube = new THREE.Mesh(geometry, material)
@@ -23,8 +24,7 @@ export function useCamera() {
 
     const camera = usePerspectiveCamera()
     // const camera = useOrthographicCamera()
-    const cubeCamera = useCubeCamera(scene)
-    scene.add(cubeCamera)
+    scene.add(camera)
 
     function animate() {
         requestAnimationFrame(animate) // 递归调用动画
@@ -76,15 +76,84 @@ function useOrthographicCamera() {
 }
 
 /**
- * - 立方相机（CubeCamera） 用于创建环境映射或反射效果,，CubeCamera通常不是用来直接查看场景的，而是用来捕捉场景的信息以供其他材质使用
+ * - 立方相机（CubeCamera） 用于创建环境映射或反射效果
+ *
+ * CubeCamera通常不是用来直接查看场景的，而是用来捕捉场景的信息以供其他材质使用;
+ * 它的作用是捕捉场景的六个面（上、下、左、右、前、后），然后将这些捕捉的图像用作立方体贴图。这个贴图可以用在反射或折射的材质上
+ *
  * CubeCamera(near, far, renderTarget);
  * near: 近平面距离
  * far: 远平面距离
  * renderTarget: WebGL渲染目标
  */
-function useCubeCamera() {
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128)
-    const camera = new THREE.CubeCamera(1, 1000, cubeRenderTarget)
+export function useCubeCamera() {
+    let scene, camera, renderer, cubeCamera, reflectiveSphere
 
-    return camera
+    function init() {
+        // 创建场景
+        scene = new THREE.Scene()
+
+        // 创建透视相机
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+        camera.position.set(0, 0, 10)
+
+        // 创建渲染器
+        renderer = new THREE.WebGLRenderer()
+        renderer.setSize(window.innerWidth / 2, window.innerHeight / 2)
+        document.body.appendChild(renderer.domElement)
+
+        // 创建立方相机
+        const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128)
+        cubeCamera = new THREE.CubeCamera(1, 1000, cubeRenderTarget)
+
+        // 创建一个反射材质的球体
+        const sphereGeometry = new THREE.SphereGeometry(1, 32, 32)
+        const sphereMaterial = new THREE.MeshBasicMaterial({
+            envMap: cubeRenderTarget.texture,
+        })
+        reflectiveSphere = new THREE.Mesh(sphereGeometry, sphereMaterial)
+        reflectiveSphere.position.set(0, 0, 0)
+        scene.add(reflectiveSphere)
+
+        // 添加一些环境
+        const geometry = new THREE.BoxGeometry()
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true })
+        for (let i = 0; i < 10; i++) {
+            const cube = new THREE.Mesh(geometry, material)
+            cube.position.set(Math.random() * 10 - 5, Math.random() * 10 - 5, Math.random() * 10 - 5)
+            scene.add(cube)
+        }
+
+        // 添加光源
+        const light = new THREE.PointLight(0xffffff, 1, 100)
+        light.position.set(10, 10, 10)
+        scene.add(light)
+
+        // 窗口调整大小处理
+        window.addEventListener('resize', onWindowResize)
+
+        // 开始渲染循环
+        animate()
+    }
+
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight
+        camera.updateProjectionMatrix()
+        renderer.setSize(window.innerWidth / 2, window.innerHeight / 2)
+    }
+
+    function animate() {
+        requestAnimationFrame(animate)
+
+        // 更新立方相机的环境贴图
+        reflectiveSphere.visible = false
+        cubeCamera.position.copy(reflectiveSphere.position)
+        cubeCamera.update(renderer, scene)
+        reflectiveSphere.visible = true
+
+        // 渲染场景
+        renderer.render(scene, camera)
+    }
+
+    init()
 }

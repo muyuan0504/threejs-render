@@ -1,9 +1,10 @@
 import WebGL from 'three/addons/capabilities/WebGL.js'
 
-import { useCamera } from './aboutCamera'
 import { demoShow } from './demo'
 import { drawingLines } from './drawLine'
 import { draw3DText } from './draw3DText'
+import { useCamera, useCubeCamera } from './aboutCamera'
+import { useGeometry } from './useGeometry'
 
 export const initRender = () => {
     /** WebGL 的浏览器支持检测 */
@@ -15,8 +16,10 @@ export const initRender = () => {
         return
     }
 
-    useCamera()
+    // useCamera()
+    // useCubeCamera()
     // demoShow()
     // draw3DText()
     // drawingLines()
+    useGeometry()
 }
