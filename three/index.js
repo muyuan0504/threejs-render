@@ -5,6 +5,7 @@ import { drawingLines } from './drawLine'
 import { draw3DText } from './draw3DText'
 import { useCamera, useCubeCamera } from './aboutCamera'
 import { useGeometry } from './useGeometry'
+import { useLight } from './useLight'
 
 export const initRender = () => {
     /** WebGL 的浏览器支持检测 */
@@ -21,5 +22,6 @@ export const initRender = () => {
     // demoShow()
     // draw3DText()
     // drawingLines()
-    useGeometry()
+    // useGeometry()
+    useLight()
 }
